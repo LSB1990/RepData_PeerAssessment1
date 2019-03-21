@@ -11,19 +11,58 @@ output:
 
 First we are going to to load all the package we are going to use in this 
 assignement:
-```{r usedpackaged}
+
+```r
 library(xtable)
 library(latexpdf)
 library(knitr)
 library(lubridate)
+```
+
+```
+## 
+## Attaching package: 'lubridate'
+```
+
+```
+## The following object is masked from 'package:base':
+## 
+##     date
+```
+
+```r
 library(dplyr)
+```
+
+```
+## 
+## Attaching package: 'dplyr'
+```
+
+```
+## The following objects are masked from 'package:lubridate':
+## 
+##     intersect, setdiff, union
+```
+
+```
+## The following objects are masked from 'package:stats':
+## 
+##     filter, lag
+```
+
+```
+## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union
 ```
 
 
 
 Now we are going set the general option for knit we want to use: 
 
-```{r setoptions}
+
+```r
 opts_chunk$set(echo = TRUE,      ###show the code 
                results ="as-is",  ###show the results
                options(scipen=999))###display number within the text in a not scientific format
@@ -33,7 +72,8 @@ Then we are going to read the corresponding data. We are also processing the
 data in the following way, we are changing the class of the "Date" column
 to make sure it is in date format and not in character format. 
 
-```{r loadandprocessdata}
+
+```r
 rawstepdata <- read.csv("activity.csv")
 
 ###getting the flavor of the raw data
@@ -46,20 +86,28 @@ tidydata$date <- as.Date.character(rawstepdata$date,format = '%Y-%m-%d')
 str(tidydata)
 ```
 
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : Date, format: "2012-10-01" "2012-10-01" ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
+```
+
 
 ## What is mean total number of steps taken per day?
 
 So we want to compute the mean of the total number of step per day. 
 First we need to have a table that sum up the  number of step for each day.
 
-```{r sumperday}
-sumperday <- with(tidydata, tapply(steps, FUN = sum, date))  ### We apply on the data set tidy data, the function sum on the number of set by factoring on the date)
 
+```r
+sumperday <- with(tidydata, tapply(steps, FUN = sum, date))  ### We apply on the data set tidy data, the function sum on the number of set by factoring on the date)
 ```
 
 Now we are going to plot the histogram of the number of step for each day. We also want to plot the mean (in green) and the median (in red).
 
-```{r plot1}
+
+```r
 hist(sumperday,
      breaks = 10,
      main = "Histogram for the total number of step per day") ### we took 10 as a break line to have a better understanding on how is split our result, and see a littlebit the tail effect. 
@@ -67,13 +115,16 @@ abline(v = mean(sumperday,na.rm = TRUE), col="green") ###let us remove the NA va
 abline(v=median(sumperday, na.rm=TRUE), col="red") ###let us remove the NA value for now in order to get a result
 ```
 
+![](PA1_template_files/figure-html/plot1-1.png)<!-- -->
+
 We can see only the red line. But that is normal becasue our mean and median are really close to each other. Indeed, we can compute: 
 
-```{r meanmediantotal}
+
+```r
 meanday<- as.numeric(mean(sumperday,na.rm = TRUE))  ###let us remove the NA value for now in order to get a result
 medianday<-as.numeric(median(sumperday,na.rm = TRUE)) ###let us remove the NA value for now in order to get a result
 ```
-An we can see that the mean is `r meanday` step and the median is `r medianday`.
+An we can see that the mean is 10766.1886792 step and the median is 10765.
 
 ## What is the average daily activity pattern?
 
@@ -81,13 +132,15 @@ Now we want to make a time series plot of the 5-minute interval (x-axis) and the
 
 So first we compute:
 
-```{r intervalaverage}
+
+```r
 intervalaverage <- with(tidydata, tapply(steps, FUN = mean, interval,na.rm=TRUE))  ### We apply on the data set tidy data, the function mean on the number of step by factoring on the interval
 ```
 
 We get the following time series: 
 
-```{r plot2}
+
+```r
 plot(intervalaverage, 
      type='l',
      main= "Average number of steps per interval within October-November",
@@ -95,20 +148,30 @@ plot(intervalaverage,
      ylab= " average number of step")
 ```
 
+![](PA1_template_files/figure-html/plot2-1.png)<!-- -->
+
 Now we see on the picture that the maximum average per interval seems to be between the 500' and the 1000' interval. 
 Let us find the interval for this maximum.
 
-```{r maxavginterva}
 
+```r
 intervalaverage[intervalaverage == max(intervalaverage)]
+```
 
-
+```
+##      835 
+## 206.1698
 ```
 
 We can conclude that the interval with the average maximum number of step is the 835' one which is around 
-```{r }  
+
+```r
 seconds_to_period(835*60)
-``` 
+```
+
+```
+## [1] "13H 55M 0S"
+```
 
 
 ## Imputing missing values
@@ -117,16 +180,21 @@ So now we wish to understand the impact of the missing valueS.
 
 First let us compute the number of missing values for all the date/interval: 
 
-```{r totalNA}
+
+```r
 totalNA <- sum(is.na(rawstepdata$steps))
 print(totalNA)
+```
+
+```
+## [1] 2304
 ```
 
 Now let us remplace the NA values by suitable other values. 
 For each interal where we have an NA value we are going to replace it by the corresponding average value for that interval. 
 
-```{r imputingNAvalue}
 
+```r
 MissingValue <- tidydata[is.na(tidydata$steps),]    #### extracting all the rows where we have missing values
 intervalaverageNew <- as.data.frame(intervalaverage,col.names = FALSE) #### preparing the mean value to replace the missing one
 intervalaverageNew$interval <- row.names(intervalaverageNew) ##converting the names of the row in a real column
@@ -138,20 +206,21 @@ names(NewValue)[3] <- "steps"  ###rename the column of our replacing value
 NewValue <- NewValue[order(NewValue$date,NewValue$interval),] ### we reorder to have the date and interval lexical order
 NewStepData <- tidydata
 NewStepData[is.na(NewStepData$steps),1] <- NewValue$steps ### now we replace in our new data set the missing value
-        
 ```
 
 
 Now we are going to do as previously to compute the total number of step for each days. 
 
 
-```{r sumperdaywithoutNA}
+
+```r
 sumperdaywithoutNA <- with(NewStepData, tapply(steps, FUN = sum, date))  ### We apply on the data set tidy data, the function sum on the number of set by factoring on the date)
 ```
 
 Now we are going to plot the histogram of the number of step for each day. We also want to plot the mean (in green) and the median (in red).
 
-```{r plot3}
+
+```r
 hist(sumperdaywithoutNA,
      breaks = 10,
      main = "Histogram for the total number of step per day without missing value") ### we took 10 as a break line to have a better understanding on how is split our result, and see a littlebit the tail effect. 
@@ -159,15 +228,18 @@ abline(v = mean(sumperdaywithoutNA), col="green") ###let us remove the NA value 
 abline(v=median(sumperdaywithoutNA), col="red") ###let us remove the NA value for now in order to get a result
 ```
 
+![](PA1_template_files/figure-html/plot3-1.png)<!-- -->
+
 
 Now let us compute our mean and median more precisely: 
 
-```{r meanmediantotalwithoutNA}
+
+```r
 meandaywithoutNA<- as.numeric(mean(sumperdaywithoutNA))  ### we get a number because no NA anymore
 mediandaywithoutNA<-as.numeric(median(sumperdaywithoutNA)) ### we get a number because no NA
 ```
 
-An we can see that the mean is `r meandaywithoutNA` step and the median is `r mediandaywithoutNA`. As we can observe the mean is slightly above what we had previously and coincide with our new median. We can also observe that the frequency is much higher in our new case around the mean that prevously.
+An we can see that the mean is 10766.1886792 step and the median is 10766.1886792. As we can observe the mean is slightly above what we had previously and coincide with our new median. We can also observe that the frequency is much higher in our new case around the mean that prevously.
 
 
 
@@ -178,7 +250,8 @@ Now we wich to understand if there is differnece in the activity patterns betwee
 First let us defined a new variable in our set of data without misssing value that will say if the day is a dady of the week or a day of the week end.
 
 
-```{r weekfactorstepdata}
+
+```r
 WeekFactorStepData <- NewStepData   ###start from our previous data set which is tidy and withou NA value
 WeekFactorStepData$nameday <- weekdays(WeekFactorStepData$date) ### let us determine which are weq
 
@@ -193,8 +266,8 @@ WeekFactorStepData$week_ind[WeekFactorStepData$week_ind==1] <- "weekend"
 
 Now that we have our indicator we are going to do the same comptutaion as previously to get the average accross interval. The only difference is that we are also going to split beetweek week-day and week-end.
 
-```{r intervalaverage2andfinalplot}
 
+```r
 ##Split the data base in two, one for weekday and the other one for weekend using our indicator
 WeekFactorStepDataWeek <- WeekFactorStepData[WeekFactorStepData$week_ind =="weekday",]
 
@@ -220,6 +293,8 @@ legend(1, 95, legend=c("Weekday", "Weekend"),
 abline(h=mean(intervalaverageweekday), col="blue")  ###we had horizontal bar to get the overal mean
 abline(h=mean(intervalaverageweekend), col="red")
 ```
+
+![](PA1_template_files/figure-html/intervalaverage2andfinalplot-1.png)<!-- -->
 
 Indeed we can observe a difference in the activity between the day of the week and the day of the week end. It seems that activity is higher in average (horizontal bar on the graph) for the day of weekend than during the day of the week around working hour. 
 
